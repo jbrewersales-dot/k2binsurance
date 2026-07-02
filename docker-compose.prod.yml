@@ -39,6 +39,8 @@ services:
       AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
       NODE_ENV: production
       PORT: "3000"
+      # Bind to all interfaces (Docker's default HOSTNAME breaks loopback).
+      HOSTNAME: 0.0.0.0
     expose:
       - "3000"
 

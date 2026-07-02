@@ -31,9 +31,12 @@ RUN npm install --no-save --no-audit --no-fund \
 
 # ---- runner ----
 FROM base AS runner
+# HOSTNAME=0.0.0.0: Docker sets HOSTNAME to the container id, which makes the
+# standalone server bind only to eth0 — loopback health checks then fail.
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
-    PORT=3000
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
 # Standalone server output + static assets + public files.
