@@ -47,6 +47,9 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=migrator /migrate/node_modules ./migrate/node_modules
+# bcryptjs is bundled into the compiled routes, but prisma/seed.js requires it
+# as a real module (dependency-free, so a direct copy is safe).
+COPY --from=deps /app/node_modules/bcryptjs ./node_modules/bcryptjs
 
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh && chown -R nextjs:nodejs /app
