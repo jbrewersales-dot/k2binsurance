@@ -76,8 +76,10 @@ echo "==> 4/6 Building & starting the stack (first build takes a few minutes)…
 docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 
 echo "==> 5/6 Waiting for the app to come up (migrations run automatically)…"
+# Probe with node (always present in the app image; wget/curl are not).
+HEALTH_CMD='fetch("http://127.0.0.1:3000/api/health").then(r=>{if(!r.ok)throw 0}).catch(()=>process.exit(1))'
 for i in $(seq 1 60); do
-  if docker compose -f docker-compose.prod.yml exec -T app wget -qO- http://127.0.0.1:3000/api/health >/dev/null 2>&1; then
+  if docker compose -f docker-compose.prod.yml exec -T app node -e "${HEALTH_CMD}" >/dev/null 2>&1; then
     echo "    App is healthy."
     break
   fi
