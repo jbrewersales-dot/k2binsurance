@@ -1,0 +1,26 @@
+{
+  "name": "k2b-insurance-infra",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AWS CDK (v2) infrastructure for the K2B Insurance Next.js app on App Runner + RDS Postgres",
+  "bin": {
+    "app": "bin/app.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy",
+    "destroy": "cdk destroy",
+    "diff": "cdk diff"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.170.0",
+    "constructs": "^10.0.0"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.170.0",
+    "typescript": "^5.7",
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.2"
+  }
+}

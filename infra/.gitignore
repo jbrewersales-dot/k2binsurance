@@ -1,0 +1,17 @@
+# CDK asset staging directory
+cdk.out/
+
+# Dependencies
+node_modules/
+
+# TypeScript build output
+*.js
+!jest.config.js
+*.d.ts
+
+# CDK context cache (may contain account-specific lookups)
+cdk.context.json
+
+# Local env
+.env
+.env.local

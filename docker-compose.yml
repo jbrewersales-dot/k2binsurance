@@ -1,0 +1,38 @@
+# Local development stack: Postgres + the app container.
+# For day-to-day dev prefer `npm run dev` against the `db` service alone
+# (`npm run db:up`). This compose file also builds/runs the production image.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: k2b
+      POSTGRES_PASSWORD: k2b
+      POSTGRES_DB: k2b
+    ports:
+      - "5432:5432"
+    volumes:
+      - k2b_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U k2b"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://k2b:k2b@db:5432/k2b?schema=public
+      AUTH_SECRET: dev-only-secret-change-me-please-32chars
+      NODE_ENV: production
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+
+volumes:
+  k2b_pgdata:

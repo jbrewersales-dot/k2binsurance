@@ -1,0 +1,64 @@
+# Production stack for a single Ubuntu host (e.g. an AWS Lightsail instance):
+#   app (Next.js standalone) + Postgres + Caddy (reverse proxy w/ automatic HTTPS).
+#
+# Configure via a .env file next to this compose file (deploy/lightsail-setup.sh
+# generates one):
+#   DOMAIN=k2binsurance.com
+#   ACME_EMAIL=you@k2binsurance.com
+#   POSTGRES_PASSWORD=<random>
+#   AUTH_SECRET=<random, 32+ chars>
+#
+# Bring up:   docker compose -f docker-compose.prod.yml up -d --build
+# Seed agent: docker compose -f docker-compose.prod.yml exec \
+#               -e SEED_AGENT_EMAIL=... -e SEED_AGENT_PASSWORD=... app node prisma/seed.js
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: k2b
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: k2b
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U k2b"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://k2b:${POSTGRES_PASSWORD}@db:5432/k2b?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
+      NODE_ENV: production
+      PORT: "3000"
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@${DOMAIN}}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

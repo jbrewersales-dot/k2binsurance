@@ -1,0 +1,17 @@
+# Caddy config: automatic Let's Encrypt certificates + reverse proxy to the app.
+# DOMAIN and ACME_EMAIL come from the compose environment.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN}, www.{$DOMAIN} {
+	encode gzip zstd
+	reverse_proxy app:3000
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}

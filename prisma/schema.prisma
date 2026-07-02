@@ -1,0 +1,53 @@
+// K2B Insurance data model.
+// One table for quote submissions (the whole reason for the backend handoff),
+// plus an Agent table backing the portal's per-agent email/password auth.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadStatus {
+  New
+  Contacted
+  Quoted
+  Bound
+  Closed
+}
+
+model Submission {
+  // Human-facing reference id, e.g. "AUT-7K2QP-2026". Also the primary key.
+  id          String     @id
+  product     String // "Auto" | "Home" | "Commercial" | "Workers' Comp" | "Landlord"
+  status      LeadStatus @default(New)
+  submittedAt DateTime   @default(now())
+
+  name      String
+  phone     String
+  email     String
+  signature String
+
+  // Flat map of every answered field key -> value (string | string[]).
+  answers Json
+  // Ordered [{ title, fields: [{ k, label }] }] snapshot of the product schema
+  // at submit time, so the portal/CSV can render Q&A even if the schema evolves.
+  schema  Json
+
+  @@index([product])
+  @@index([status])
+  @@index([submittedAt])
+  @@index([product, status])
+}
+
+model Agent {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
