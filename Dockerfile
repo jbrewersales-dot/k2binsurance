@@ -18,6 +18,17 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate && npm run build
 
+# ---- migrator ----
+# The Prisma CLI has transitive deps (@prisma/config -> effect, c12, ...) that
+# aren't part of the app's runtime trace, so give `migrate deploy` its own
+# complete install, pinned to the exact version from the lockfile.
+FROM base AS migrator
+WORKDIR /migrate
+COPY package-lock.json ./
+RUN npm install --no-save --no-audit --no-fund \
+      prisma@"$(node -p "require('./package-lock.json').packages['node_modules/prisma'].version")" \
+    && rm package-lock.json
+
 # ---- runner ----
 FROM base AS runner
 ENV NODE_ENV=production \
@@ -30,12 +41,12 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Prisma schema/migrations + the generated client + CLI/engines needed to run
-# `migrate deploy` at container start.
+# Prisma schema/migrations + the generated client for the app runtime, plus a
+# self-contained CLI tree (from the migrator stage) for `migrate deploy` on boot.
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=migrator /migrate/node_modules ./migrate/node_modules
 
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh && chown -R nextjs:nodejs /app
