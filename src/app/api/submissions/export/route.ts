@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { LEAD_STATUSES } from "@/lib/products";
 import { buildCsv, csvFilename } from "@/lib/csv";
+import { maskSensitiveAnswers } from "@/lib/sensitive";
 import type { Answers, LeadRecord } from "@/lib/submissions";
 
 export const dynamic = "force-dynamic";
@@ -46,7 +47,8 @@ export async function GET(req: NextRequest) {
     phone: r.phone,
     email: r.email,
     signature: r.signature,
-    answers: r.answers as Answers,
+    // CSV never contains full sensitive identifiers — masked only.
+    answers: maskSensitiveAnswers(r.answers as Answers),
     schema: r.schema as LeadRecord["schema"],
   }));
 

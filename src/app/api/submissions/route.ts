@@ -12,6 +12,7 @@ import {
   type Answers,
   type LeadRecord,
 } from "@/lib/submissions";
+import { encryptSensitiveAnswers, maskSensitiveAnswers } from "@/lib/sensitive";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ const postBody = z.object({
   answers: z.record(z.union([z.string(), z.array(z.string())])),
   signature: z.string(),
   consent: z.boolean(),
+  consentPhone: z.boolean(),
   clientRefId: z.string().optional(),
 });
 
@@ -44,7 +46,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Malformed submission." }, { status: 400 });
   }
-  const { product, answers, signature, consent, clientRefId } = parsed.data;
+  const { product, answers, signature, consent, consentPhone, clientRefId } = parsed.data;
 
   const schema = schemaForProduct(product);
   if (!schema) {
@@ -52,7 +54,13 @@ export async function POST(req: NextRequest) {
   }
 
   // Never trust the client — re-validate every required field server-side.
-  const result = validateSubmission(schema, answers as Answers, signature, consent);
+  const result = validateSubmission(
+    schema,
+    answers as Answers,
+    signature,
+    consent,
+    consentPhone,
+  );
   if (!result.ok) {
     return NextResponse.json(
       { error: "Please complete all required fields.", details: result.errors },
@@ -81,7 +89,8 @@ export async function POST(req: NextRequest) {
       phone,
       email,
       signature: signature.trim(),
-      answers: answers as Answers,
+      // SSN / driver's license values are encrypted at rest (AES-256-GCM).
+      answers: encryptSensitiveAnswers(answers as Answers),
       schema: buildSchemaSnapshot(schema),
     },
     select: { id: true },
@@ -131,7 +140,9 @@ export async function GET(req: NextRequest) {
     phone: r.phone,
     email: r.email,
     signature: r.signature,
-    answers: r.answers as Answers,
+    // Sensitive identifiers leave the API masked (***-**-1234); the reveal
+    // endpoint returns full values on demand.
+    answers: maskSensitiveAnswers(r.answers as Answers),
     schema: r.schema as LeadRecord["schema"],
   }));
 

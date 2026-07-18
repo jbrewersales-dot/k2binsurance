@@ -65,11 +65,17 @@ DOMAIN=${DOMAIN_IN}
 ACME_EMAIL=${ACME_IN}
 POSTGRES_PASSWORD=$(openssl rand -hex 24)
 AUTH_SECRET=$(openssl rand -base64 48 | tr -d '\n=/+' | cut -c1-48)
+ENCRYPTION_KEY=$(openssl rand -base64 32)
 EOF
   chmod 600 .env
   echo "    Wrote ${APP_DIR}/.env (secrets generated)."
 else
   echo "    ${APP_DIR}/.env already exists — keeping it."
+  # Older installs predate field encryption — add the key if it's missing.
+  if ! grep -q '^ENCRYPTION_KEY=' .env; then
+    echo "ENCRYPTION_KEY=$(openssl rand -base64 32)" >> .env
+    echo "    Added missing ENCRYPTION_KEY to .env."
+  fi
 fi
 
 echo "==> 4/6 Building & starting the stack (first build takes a few minutes)…"

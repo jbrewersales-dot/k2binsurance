@@ -49,6 +49,7 @@ export function Wizard({
   const [data, setData] = useState<Values>({});
   const [signature, setSignature] = useState("");
   const [consent, setConsent] = useState(false);
+  const [consentPhone, setConsentPhone] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -102,11 +103,17 @@ export function Wizard({
     setReviewError(null);
     setSubmitError(null);
     if (isEmpty(signature)) {
-      setReviewError("Type your full legal name to sign.");
+      setReviewError("Please type your full name to sign.");
       return;
     }
     if (!consent) {
-      setReviewError("Please check the authorization box to continue.");
+      setReviewError("Please confirm your information is accurate (first checkbox).");
+      return;
+    }
+    if (!consentPhone) {
+      setReviewError(
+        "Please check the phone & text consent so we can reach you with your quote.",
+      );
       return;
     }
     setSubmitting(true);
@@ -119,6 +126,7 @@ export function Wizard({
           answers: data,
           signature,
           consent,
+          consentPhone,
           clientRefId: refId,
         }),
       });
@@ -182,12 +190,20 @@ export function Wizard({
             refId={refId}
             signature={signature}
             consent={consent}
+            consentPhone={consentPhone}
             error={reviewError}
             submitError={submitError}
             submitting={submitting}
             onEdit={editGroup}
             onSignature={setSignature}
-            onConsent={setConsent}
+            onConsent={(v) => {
+              setConsent(v);
+              setReviewError(null);
+            }}
+            onConsentPhone={(v) => {
+              setConsentPhone(v);
+              setReviewError(null);
+            }}
             onBack={() => {
               setView("form");
               setStep(steps.length - 1);
@@ -441,12 +457,14 @@ function ReviewStep({
   refId,
   signature,
   consent,
+  consentPhone,
   error,
   submitError,
   submitting,
   onEdit,
   onSignature,
   onConsent,
+  onConsentPhone,
   onBack,
   onSubmit,
 }: {
@@ -455,12 +473,14 @@ function ReviewStep({
   refId: string;
   signature: string;
   consent: boolean;
+  consentPhone: boolean;
   error: string | null;
   submitError: string | null;
   submitting: boolean;
   onEdit: (i: number) => void;
   onSignature: (v: string) => void;
   onConsent: (v: boolean) => void;
+  onConsentPhone: (v: boolean) => void;
   onBack: () => void;
   onSubmit: () => void;
 }) {
@@ -538,11 +558,55 @@ function ReviewStep({
             style={{ marginTop: 3, width: 18, height: 18, flex: "none" }}
           />
           <span className="t-body-sm" style={{ color: "var(--text-secondary)" }}>
-            I confirm the information above is accurate and I authorize K2B Insurance to
-            contact me about this request. I understand this is a quote request, not a
-            binding policy.
+            I confirm the information I provided is accurate and complete, and I
+            authorize K2B Insurance to obtain the consumer reports needed to prepare my
+            quote. I understand this is a quote request, not a binding policy.
           </span>
         </label>
+
+        <label
+          style={{
+            display: "flex",
+            gap: "var(--space-3)",
+            alignItems: "flex-start",
+            marginTop: "var(--space-3)",
+            cursor: "pointer",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={consentPhone}
+            onChange={(e) => onConsentPhone(e.target.checked)}
+            style={{ marginTop: 3, width: 18, height: 18, flex: "none" }}
+          />
+          <span className="t-body-sm" style={{ color: "var(--text-secondary)" }}>
+            I expressly consent to receive calls and text messages about my quote and
+            related insurance services from K2B Insurance at the phone number I provided,
+            including calls and texts placed with automated technology or prerecorded
+            messages. Message and data rates may apply; I can reply STOP to opt out of
+            texts at any time. Consent is not a condition of purchase.
+          </span>
+        </label>
+
+        <p
+          style={{
+            margin: "14px 0 0",
+            fontSize: 12,
+            lineHeight: 1.5,
+            color: "var(--text-muted)",
+          }}
+        >
+          Your Social Security number, driver&rsquo;s license number, and everything else
+          you share are handled as described in our{" "}
+          <Link
+            href="/privacy"
+            style={{ color: "var(--blue-600)", fontWeight: 600 }}
+            target="_blank"
+          >
+            privacy policy
+          </Link>
+          .
+        </p>
       </section>
 
       {(error || submitError) && (

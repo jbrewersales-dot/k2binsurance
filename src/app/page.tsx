@@ -432,8 +432,13 @@ export default function LandingPage() {
             <span className="t-caption" style={{ color: "var(--text-muted)" }}>
               © 2026 K2B Insurance LLC · Licensed Missouri producer.
             </span>
-            <span className="t-caption" style={{ color: "var(--text-muted)" }}>
-              Quotes are estimates and subject to carrier underwriting.
+            <span style={{ display: "inline-flex", gap: 18, alignItems: "center" }}>
+              <Link href="/privacy" className="t-caption" style={{ color: "var(--text-link)" }}>
+                Privacy policy
+              </Link>
+              <span className="t-caption" style={{ color: "var(--text-muted)" }}>
+                Quotes are estimates and subject to carrier underwriting.
+              </span>
             </span>
           </div>
         </div>

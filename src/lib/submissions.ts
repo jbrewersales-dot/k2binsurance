@@ -67,13 +67,15 @@ export interface ValidationResult {
 /**
  * Server-side validation — never trust the client. Checks every required field
  * across the whole schema, that select/chip values are within their options,
- * and that signature + consent are present.
+ * and that signature + both consents (accuracy/consumer-report authorization
+ * and TCPA phone/text consent) are present.
  */
 export function validateSubmission(
   schema: ProductSchema,
   answers: Answers,
   signature: string,
   consent: boolean,
+  consentPhone: boolean,
 ): ValidationResult {
   const errors: string[] = [];
 
@@ -102,10 +104,15 @@ export function validateSubmission(
   }
 
   if (!signature || signature.trim() === "") {
-    errors.push("An electronic signature is required.");
+    errors.push("Please type your full name to sign.");
   }
   if (!consent) {
-    errors.push("You must authorize K2B Insurance to contact you.");
+    errors.push("Please confirm your information is accurate (first checkbox).");
+  }
+  if (!consentPhone) {
+    errors.push(
+      "Please check the phone & text consent so we can reach you with your quote.",
+    );
   }
 
   return { ok: errors.length === 0, errors };
@@ -131,5 +138,6 @@ export const submissionBodySchema = z.object({
   answers: z.record(z.union([z.string(), z.array(z.string())])),
   signature: z.string(),
   consent: z.boolean(),
+  consentPhone: z.boolean(),
 });
 export type SubmissionBody = z.infer<typeof submissionBodySchema>;

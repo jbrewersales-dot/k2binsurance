@@ -2,9 +2,17 @@
 
 import { useState } from "react";
 import { Icon } from "@/components/icons";
-import { LEAD_STATUSES, STATUS_COLORS, productColor, type LeadStatus } from "@/lib/products";
+import {
+  LEAD_STATUSES,
+  SENSITIVE_KEYS,
+  STATUS_COLORS,
+  productColor,
+  type LeadStatus,
+} from "@/lib/products";
 import { displayAnswer, formatDateTime, cleanLabel } from "@/lib/format";
 import type { LeadRecord } from "@/lib/submissions";
+
+const SENSITIVE_SET = new Set<string>(SENSITIVE_KEYS);
 
 function ProductBadge({ product }: { product: string }) {
   const c = productColor(product);
@@ -64,6 +72,39 @@ export function LeadDetail({
 }) {
   const [copyLabel, setCopyLabel] = useState("Copy contact info");
   const answers = lead.answers ?? {};
+
+  // Click-to-reveal for masked sensitive identifiers. One authenticated fetch
+  // pulls the decrypted values; each field then toggles individually.
+  const [sensitiveValues, setSensitiveValues] = useState<Record<string, string> | null>(null);
+  const [shown, setShown] = useState<Set<string>>(new Set());
+  const [revealBusy, setRevealBusy] = useState(false);
+
+  async function toggleReveal(key: string) {
+    if (shown.has(key)) {
+      setShown((s) => {
+        const next = new Set(s);
+        next.delete(key);
+        return next;
+      });
+      return;
+    }
+    let values = sensitiveValues;
+    if (!values) {
+      setRevealBusy(true);
+      try {
+        const res = await fetch(`/api/submissions/${lead.id}/sensitive`, { cache: "no-store" });
+        if (!res.ok) throw new Error();
+        values = (await res.json()).values ?? {};
+        setSensitiveValues(values);
+      } catch {
+        onToast("Couldn't reveal — try again.");
+        return;
+      } finally {
+        setRevealBusy(false);
+      }
+    }
+    setShown((s) => new Set(s).add(key));
+  }
 
   function copyContact() {
     const text = [lead.name, lead.phone, lead.email].filter(Boolean).join("\n");
@@ -129,16 +170,43 @@ export function LeadDetail({
                 {g.title}
               </h2>
               <dl style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3) var(--space-5)" }}>
-                {g.fields.map((f) => (
-                  <div key={f.k}>
-                    <dt className="t-caption" style={{ color: "var(--text-muted)" }}>
-                      {cleanLabel(f.label)}
-                    </dt>
-                    <dd className="t-body-sm" style={{ marginTop: 2 }}>
-                      {displayAnswer(answers[f.k])}
-                    </dd>
-                  </div>
-                ))}
+                {g.fields.map((f) => {
+                  const sensitive = SENSITIVE_SET.has(f.k) && answers[f.k];
+                  const revealed = sensitive && shown.has(f.k) && sensitiveValues?.[f.k];
+                  return (
+                    <div key={f.k}>
+                      <dt className="t-caption" style={{ color: "var(--text-muted)" }}>
+                        {cleanLabel(f.label)}
+                      </dt>
+                      <dd className="t-body-sm" style={{ marginTop: 2 }}>
+                        {sensitive ? (
+                          <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+                            <span className="mono">
+                              {revealed ? sensitiveValues![f.k] : displayAnswer(answers[f.k])}
+                            </span>
+                            <button
+                              onClick={() => toggleReveal(f.k)}
+                              disabled={revealBusy}
+                              className="t-caption"
+                              style={{
+                                border: "none",
+                                background: "none",
+                                color: "var(--text-link)",
+                                cursor: "pointer",
+                                fontWeight: 600,
+                                padding: 0,
+                              }}
+                            >
+                              {shown.has(f.k) ? "Hide" : "Reveal"}
+                            </button>
+                          </span>
+                        ) : (
+                          displayAnswer(answers[f.k])
+                        )}
+                      </dd>
+                    </div>
+                  );
+                })}
               </dl>
             </div>
           ))}

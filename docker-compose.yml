@@ -29,8 +29,11 @@ services:
     environment:
       DATABASE_URL: postgresql://k2b:k2b@db:5432/k2b?schema=public
       AUTH_SECRET: dev-only-secret-change-me-please-32chars
+      # Dev-only key (base64 of 32 bytes) — never use in production.
+      ENCRYPTION_KEY: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
       NODE_ENV: production
       PORT: "3000"
+      HOSTNAME: 0.0.0.0
     ports:
       - "3000:3000"
 

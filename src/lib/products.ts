@@ -19,6 +19,11 @@ export function slugForProduct(product: string): ProductSlug | null {
   return entry ? entry[0] : null;
 }
 
+// Answer keys holding sensitive identifiers (encrypted at rest, masked in the
+// portal, excluded from CSV). Client-safe constant — no crypto imports here.
+export const SENSITIVE_KEYS = ["ssn", "dlNumber"] as const;
+export type SensitiveKey = (typeof SENSITIVE_KEYS)[number];
+
 export const LEAD_STATUSES = [
   "New",
   "Contacted",

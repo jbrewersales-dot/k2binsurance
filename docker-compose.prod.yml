@@ -37,6 +37,7 @@ services:
     environment:
       DATABASE_URL: postgresql://k2b:${POSTGRES_PASSWORD}@db:5432/k2b?schema=public
       AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env}
       NODE_ENV: production
       PORT: "3000"
       # Bind to all interfaces (Docker's default HOSTNAME breaks loopback).

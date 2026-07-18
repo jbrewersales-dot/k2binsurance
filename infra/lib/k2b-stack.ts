@@ -167,6 +167,19 @@ export class K2bStack extends cdk.Stack {
       },
     });
 
+    // Key material for at-rest field encryption of sensitive answers (SSN /
+    // driver's license). The app derives a 32-byte AES key from this string
+    // via SHA-256, so a generated 48-char alphanumeric secret is sufficient.
+    // Rotating/losing it makes previously encrypted fields unreadable.
+    const encryptionSecret = new secretsmanager.Secret(this, 'FieldEncryptionSecret', {
+      secretName: 'k2b/encryption-key',
+      description: 'Field-encryption key (ENCRYPTION_KEY) for sensitive submission answers',
+      generateSecretString: {
+        passwordLength: 48,
+        excludePunctuation: true,
+      },
+    });
+
     // DATABASE_URL: App Runner's RuntimeEnvironmentSecrets can only inject a
     // whole secret value (or a single JSON key) per env var -- it cannot
     // *compose* a connection string from multiple discrete fields. So we build
@@ -223,6 +236,7 @@ export class K2bStack extends cdk.Stack {
     });
     databaseUrlSecret.grantRead(instanceRole);
     authSecret.grantRead(instanceRole);
+    encryptionSecret.grantRead(instanceRole);
 
     // ---------------------------------------------------------------------
     // App Runner VPC connector + service
@@ -258,6 +272,7 @@ export class K2bStack extends cdk.Stack {
             runtimeEnvironmentSecrets: [
               { name: 'DATABASE_URL', value: databaseUrlSecret.secretArn },
               { name: 'AUTH_SECRET', value: authSecret.secretArn },
+              { name: 'ENCRYPTION_KEY', value: encryptionSecret.secretArn },
             ],
           },
         },

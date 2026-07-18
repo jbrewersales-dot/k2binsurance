@@ -30,7 +30,25 @@ npm run dev                           # http://localhost:3000
 ```
 
 Environment variables are documented in [`.env.example`](.env.example).
-`DATABASE_URL` and `AUTH_SECRET` are required.
+`DATABASE_URL`, `AUTH_SECRET`, and `ENCRYPTION_KEY` are required.
+
+## Sensitive data
+
+Quote submissions include Social Security and driver's license numbers
+(carrier-required consumer reports). These fields are:
+
+- **encrypted at rest** (AES-256-GCM, key from `ENCRYPTION_KEY` — back that key
+  up; losing it makes stored values unreadable),
+- **masked by default** everywhere they leave the API (`***-**-1234`), including
+  the portal list/detail, print view, and CSV export,
+- **revealed only on demand** via the authenticated
+  `GET /api/submissions/:id/sensitive` endpoint (portal "Reveal" button),
+- never written to logs.
+
+Submissions also require two consents server-side: accuracy + consumer-report
+authorization, and express TCPA phone/text consent. The public site includes a
+`/privacy` policy page (drafted as a starting template — have an attorney
+review it).
 
 ## Deployment
 
