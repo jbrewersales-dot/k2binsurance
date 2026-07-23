@@ -31,6 +31,9 @@ export function SiteHeader() {
           <Link href="/#why" className="t-body-sm nav-link">
             Why K2B
           </Link>
+          <Link href="/client-center" className="t-body-sm nav-link">
+            Client center
+          </Link>
           <a
             href="tel:+15736205630"
             className="mono t-body-sm"

@@ -179,12 +179,28 @@ export default function LandingPage() {
               a few questions and we&apos;ll get back to you with a real rate — usually
               the same day.
             </p>
-            <div style={{ display: "flex", gap: "var(--space-3)", marginBottom: "var(--space-8)" }}>
+            <div style={{ display: "flex", gap: "var(--space-3)" }}>
               <Link href="/quote/auto" className="btn btn-gold">
                 Start auto quote
               </Link>
               <Link href="/quote/home" className="btn btn-outline-inverse">
                 Start home quote
+              </Link>
+            </div>
+            <div style={{ marginTop: 14, marginBottom: 26 }}>
+              <Link
+                href="/instant-quote"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 7,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "var(--blue-300)",
+                }}
+              >
+                <Icon name="zap" size={15} strokeWidth={2} />
+                Or get instant online rates yourself →
               </Link>
             </div>
             <ul style={{ listStyle: "none", padding: 0, display: "flex", flexWrap: "wrap", gap: "var(--space-5)" }}>
@@ -420,6 +436,12 @@ export default function LandingPage() {
               </a>
               <Link href="/portal" className="nav-link">
                 Agent login
+              </Link>
+              <Link href="/client-center" style={{ color: "var(--text-link)" }}>
+                Client center — manage your policy
+              </Link>
+              <Link href="/instant-quote" style={{ color: "var(--text-link)" }}>
+                Instant online quoting
               </Link>
             </div>
           </div>
